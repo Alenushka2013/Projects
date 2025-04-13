@@ -1,0 +1,51 @@
+-- Обчислення TS для кожного користувача
+WITH user_ts AS(
+  SELECT
+    id_user, 
+    id_region,
+    SUM(amount) AS TS
+  FROM `test-skelar-1.1.Task 11`
+  WHERE status = 'success'
+  GROUP BY id_user, id_region
+),
+-- Обчислення середнього TS по кожному регіону
+region_avg_ts AS (
+  SELECT
+    id_region, 
+    AVG(TS) AS avg_TS
+  FROM user_ts
+  GROUP BY id_region
+)
+-- Вибір користувачів, чий TS більше середнього по регіону
+SELECT id_user
+FROM user_ts
+JOIN region_avg_ts
+ON user_ts.id_region = region_avg_ts.id_region
+WHERE user_ts.TS > region_avg_ts.avg_TS;
+
+# 2272 - рядків результат
+
+SELECT DISTINCT id_user
+FROM (
+  SELECT 
+    id_user, id_region,SUM(amount) AS TS
+  FROM `test-skelar-1.1.Task 11`
+  WHERE status = 'success'
+  GROUP BY id_user, id_region
+) AS user_ts
+JOIN (
+  SELECT 
+    id_region, AVG(TS) AS avg_TS
+  FROM (
+    SELECT 
+      id_user, id_region, SUM(amount) AS TS
+    FROM `test-skelar-1.1.Task 11`
+    WHERE status = 'success'
+    GROUP BY id_user, id_region
+  ) AS user_ts_inner
+  GROUP BY id_region
+) AS region_avg_ts
+ON user_ts.id_region = region_avg_ts.id_region
+WHERE user_ts.TS > region_avg_ts.avg_TS;
+
+#  2147  - рядків результат
